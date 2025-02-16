@@ -5,8 +5,8 @@ USER root
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install Java 11
-RUN apt-get update && apt-get install -y openjdk-17-jdk
+# Install Java 11 and ACL
+RUN apt-get update && apt-get install -y openjdk-17-jdk acl
 
 # Install Conveyor
 RUN wget https://app.conveyordata.com/api/info/cli/location/linux/amd64 -O conveyor_linux_amd64.tar.gz && \
