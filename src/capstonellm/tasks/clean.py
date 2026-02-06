@@ -4,7 +4,6 @@ from pyspark.sql import SparkSession
 import pyspark.sql.functions as sf
 from capstonellm.common.catalog import llm_bucket
 from capstonellm.common.spark import ClosableSparkSession
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -29,36 +28,42 @@ def clean(spark: SparkSession, environment: str, tag: str):
             sf.col("item.body").alias("question_body"),
             sf.col("item.question_id").alias("question_id"),
             sf.col("item.title").alias("title"),
+            sf.col("item.link").alias("link"),
             sf.explode(sf.col("item.tags")).alias("tag"),
             )
 
     df_answers_explode = df_answers.select(sf.explode(sf.col('items')).alias("item"))
-    df_answers_explode.show(5)
-    df_answers_explode.printSchema()
+    #df_answers_explode.show(5)
+    #df_answers_explode.printSchema()
 
     df_answers_flat = df_answers_explode.select(
             sf.col("item.body").alias("answer_body"),
             sf.col("item.question_id").alias("question_id"),
+            sf.col("item.answer_id").alias("answer_id"),
             )        
 
-    df_answers_flat.printSchema()
-    df_answers_flat.show(5)
+    #df_answers_flat.printSchema()
+    #df_answers_flat.show(5)
 
     df_combined = df_questions_flat.join(df_answers_flat, on = "question_id")
-    df_combined.show(5)
-    print("df_combined shape:",(df_combined.count(), len(df_combined.columns)))
+    #df_combined.show(5)
+    #print("df_combined shape:",(df_combined.count(), len(df_combined.columns)))
 
-    df_one = df_combined.groupBy("question_id", "tag").agg(
+    df = df_combined.groupBy("question_id", "tag").agg(
     sf.first("title", ignorenulls=True).alias("title"),
-    sf.first("question_body", ignorenulls=True).alias("question_body"),
-    sf.first("answer_body", ignorenulls=True).alias("answer_body"),)
+    sf.first("question_body", ignorenulls=True).alias("question"),
+    sf.first("answer_body", ignorenulls=True).alias("answer"),
+    sf.first("answer_id", ignorenulls=True).alias("answer_id"),
+    sf.first("link", ignorenulls=True).alias("link"))
 
-    print("df_one shape:",(df_one.count(), len(df_one.columns)))
-    df_one.show(5)
+    #print("df_one shape:",(df.count(), len(df.columns)))
+    #df.show(5)
 
-    df_one.repartition(df_one.count()).write.mode("overwrite").json(f"{S3_OUTPUT_BASE_PATH}")
-
+    #'question_id', 'question', 'title', 'link', 'answer_id', 'answer'
     # return 1 json document per question 
+    df.repartition(df.count()).write.mode("overwrite").json(f"{S3_OUTPUT_BASE_PATH}")
+    print("JSON files uploaded to S3 AWS")
+
     pass
 
 def main():

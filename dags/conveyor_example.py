@@ -6,6 +6,8 @@ from conveyor.operators import (
     ConveyorSparkSubmitOperatorV2,
 )
 
+
+
 default_args = {
     "owner": "airflow",
     "description": "Use of the DockerOperator",
@@ -18,7 +20,7 @@ default_args = {
 }
 
 with DAG(
-    "docker_operator_dag_<name>",
+    "docker_operator_dag_kim",
     default_args=default_args,
     catchup=False,
 ) as dag:
@@ -27,6 +29,5 @@ with DAG(
         task_id="clean",
         instance_type="mx.medium",
         aws_role="capstone_conveyor_llm",
-        cmds=["your_container_command"],
-        arguments=["your_container_arguments"],
-    )
+        cmds=["python3",  "-m",  "capstonellm.tasks.clean", "-e", "aws"],
+    ), 
